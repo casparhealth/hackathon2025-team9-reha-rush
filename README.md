@@ -28,7 +28,7 @@ The core idea is to create a game that is simple to understand but increasingly 
 The development of Reha Rush was significantly accelerated through the use of Large Language Models in a pair-programming workflow:
 
 *   **Replit AI Agent:** The initial MVP of the game, including the core grid and movement logic, was rapidly prototyped using Replit's AI agent. This allowed for quick iteration on the basic game mechanics.
-*   **Cursor (GPT-4 Integration):** The project was then moved to Cursor to build upon the Replit base. Cursor's AI features were used for more complex tasks, including refactoring the codebase, implementing new features like the tutorial and level progression, and debugging complex navigational logic.
+*   **Cursor (GPT-5 and gemini-2.5-pro Integration):** The project was then moved to Cursor to build upon the Replit base. Cursor's AI features were used for more complex tasks, including refactoring the codebase, implementing new features like the tutorial and level progression, and debugging complex navigational logic.
 *   **ChatGPT:** All visual assets for the game—including the clinic icons and equipment sprites—were generated using ChatGPT (DALL-E 3) to create a cohesive and friendly art style.
 
 #### Notable Blockers
