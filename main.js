@@ -36,49 +36,44 @@ const LEVELS = {
         isTutorial: true,
         maxConcurrentCarts: 1,
         map: [
-            "############",
-            "#S--+--G  ##",
-            "#   |     ##",
-            "#   |     ##",
-            "#   B     ##",
-            "#         ##",
-            "#         ##",
-            "############"
+            "###########",
+            "#S--+--G  #",
+            "#   |     #",
+            "#   |     #",
+            "#   B     #",
+            "###########"
         ],
         colors: ['G', 'B']
     },
     2: {
-        attempts: 7,
+        attempts: 10,
         spawnInterval: 4200,
         moveSpeed: 530,
         maxConcurrentCarts: 2,
         map: [
-            "############",
-            "#S--+--G  ##",
-            "#   |  |  ##",
-            "#   |  |  ##",
-            "#   +--+  ##",
-            "#   +--B  ##",
-            "#         ##",
-            "#         ##",
-            "############"
-        ],
-        colors: ['G', 'B']
-    },
-    3: {
-        attempts: 8,
-        spawnInterval: 3900,
-        moveSpeed: 490,
-        map: [
             "##############",
-            "#S--+----+G ##",
-            "#   |    |  ##",
-            "#   +----+--O#",
+            "#S--+----G   #",
             "#   |        #",
             "#   +----B   #",
-            "#            #",
-            "#            #",
+            "#   |        #",
+            "#   +----O   #",
             "##############"
+        ],
+        colors: ['G', 'B', 'O']
+    },
+    3: {
+        attempts: 10,
+        spawnInterval: 3900,
+        moveSpeed: 490,
+        maxConcurrentCarts: 4,
+        map: [
+            "################",
+            "#S----+----G   #",
+            "#     |        #",
+            "# O---+        #",
+            "#     |        #",
+            "#     +----B   #",
+            "################"
         ],
         colors: ['G', 'B', 'O']
     },
@@ -86,16 +81,15 @@ const LEVELS = {
         attempts: 10,
         spawnInterval: 3200,
         moveSpeed: 320,
+        maxConcurrentCarts: 5,
         map: [
-            "##############",
-            "#S---+---G  ##",
-            "#    |   |  ##",
-            "#    +---+--O#",
-            "#    |       #",
-            "# B--+       #",
-            "#            #",
-            "#            #",
-            "##############"
+            "##################",
+            "#S---+--G        #",
+            "#    |           #",
+            "#    +----B      #",
+            "#    |           #",
+            "#    +--------O  #",
+            "##################"
         ],
         colors: ['G', 'B', 'O']
     },
@@ -103,16 +97,16 @@ const LEVELS = {
         attempts: 10,
         spawnInterval: 1500,
         moveSpeed: 300,
+        maxConcurrentCarts: 6,
         map: [
-            "##############",
-            "#S--+---G   ##",
-            "#   |   |   ##",
-            "#   +---+--O##",
-            "#       |   ##",
-            "#   B   +    #",
-            "#            #",
-            "#            #",
-            "##############"
+            "####################",
+            "#S--+--G           #",
+            "#   |              #",
+            "#   +----------+--B#",
+            "#              |   #",
+            "#              |   #",
+            "#   O----------+   #",
+            "####################"
         ],
         colors: ['G', 'B', 'O']
     }
@@ -987,8 +981,12 @@ window.addEventListener('load', () => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('view') === 'library') {
         // Skip landing, go straight to library
-        landing.style.display = 'none';
-        library.style.display = 'flex';
+        if (landing) landing.style.display = 'none';
+        if (library) library.style.display = 'flex';
+    } else {
+        // Default view
+        if (landing) landing.style.display = 'flex';
+        if (library) library.style.display = 'none';
     }
 
     // Flow: Landing (full image) -> Library -> Game
