@@ -47,33 +47,35 @@ const LEVELS = {
     },
     2: {
         attempts: 10,
+        spawnInterval: 3900,
+        moveSpeed: 490,
+        maxConcurrentCarts: 4,
+        map: [
+            "################",
+            "#S----+|---G   #",
+            "#     |        #",
+            "# O---+        #",
+            "#     |        #",
+            "#     +----B   #",
+            "################"
+        ],
+        colors: ['G', 'B', 'O']
+    },
+    3: {
+        attempts: 10,
         spawnInterval: 4200,
         moveSpeed: 530,
-        maxConcurrentCarts: 2,
+        maxConcurrentCarts: 3,
         map: [
             "##############",
             "#S--+----G   #",
             "#   |        #",
             "#   +----B   #",
             "#   |        #",
-            "#   +----O   #",
+            "#   +----O   #", 
+            "#   |        #",
+            "#   +----G   #",
             "##############"
-        ],
-        colors: ['G', 'B', 'O']
-    },
-    3: {
-        attempts: 10,
-        spawnInterval: 3900,
-        moveSpeed: 490,
-        maxConcurrentCarts: 4,
-        map: [
-            "################",
-            "#S----+----G   #",
-            "#     |        #",
-            "# O---+        #",
-            "#     |        #",
-            "#     +----B   #",
-            "################"
         ],
         colors: ['G', 'B', 'O']
     },
@@ -387,6 +389,10 @@ class Game {
     }
     
     getForwardDirections(switchObj, validDirections) {
+        // Special case: Level 2, middle switch (x=6, y=3) should allow only left and down
+        if (this.currentLevel === 2 && switchObj.x === 6 && switchObj.y === 3) {
+            return validDirections.filter(d => (d === DIRECTIONS.WEST || d === DIRECTIONS.SOUTH));
+        }
         if (!this.spawn || validDirections.length <= 2) {
             return validDirections;
         }
