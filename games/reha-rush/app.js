@@ -40,11 +40,6 @@
    */
   const questionBank = [
 
-    // Detail-oriented paragraphs (names, places, times)
-    { difficulty: "easy", passage: "On Monday at 7:30 PM, Maya and Leo met at Oak Park to practice badminton.", question: "What time did they meet?", options: ["6:30 PM", "7:30 PM", "8:30 PM", "7:00 PM"], correctIndex: 1 },
-    { difficulty: "easy", passage: "Carlos placed the red notebook on the second shelf beside the green vase before leaving for class.", question: "What color was the notebook?", options: ["Blue", "Green", "Red", "Black"], correctIndex: 2 },
-    { difficulty: "medium", passage: "Priya caught the 8:05 train from Riverdale Station to Central, meeting Amir at 8:30 near Gate B.", question: "Where did Priya meet Amir?", options: ["Gate A", "Gate B", "Platform 2", "Ticket desk"], correctIndex: 1 },
-
     // Image-based detail question (uses external image URL)
     { difficulty: "easy", media: { type: "image", src: "https://upload.wikimedia.org/wikipedia/commons/1/15/Red_Apple.jpg", alt: "A red apple on a white background" }, passage: "", question: "What color is the fruit?", options: ["Green", "Yellow", "Red", "Purple"], correctIndex: 2 },
 
@@ -55,12 +50,10 @@
     { difficulty: "medium", media: { type: "image", src: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='200'><rect width='300' height='200' fill='white'/><rect x='50' y='75' width='60' height='60' fill='blue'/><rect x='120' y='75' width='60' height='60' fill='green'/><rect x='190' y='75' width='60' height='60' fill='red'/></svg>", alt: "Three squares: blue, green, red" }, passage: "", question: "What is the color of the rightmost square?", options: ["Blue", "Green", "Red", "Yellow"], correctIndex: 2 },
    
     // Paragraph-based True/False set (example like the user's format)
-    { difficulty: "easy", type: "paragraph", passage: "Liam has a garden behind his house. He waters flowers every morning. Last Saturday, he planted tomatoes and carrots. After gardening, he drinks tea on his porch.", question: "Liam waters flowers only on weekends.", options: ["True", "False"], correctIndex: 1 },
-    { difficulty: "easy", type: "paragraph", passage: "Liam has a garden behind his house. He waters flowers every morning. Last Saturday, he planted tomatoes and carrots. After gardening, he drinks tea on his porch.", question: "Last Saturday, Liam planted tomatoes and carrots.", options: ["True", "False"], correctIndex: 0 },
-    { difficulty: "easy", type: "paragraph", passage: "Emma enjoys baking in her kitchen. Every Sunday, she makes cookies and cakes. Last Sunday, she baked chocolate chip cookies and a lemon cake. After baking, she cleaned up the kitchen.", question: "Last Sunday, she baked chocolate chip cookies and a lemon cake.", options: ["True", "False"], correctIndex: 0 },
-    { difficulty: "easy", type: "paragraph", passage: "Emma enjoys baking in her kitchen. Every Sunday, she makes cookies and cakes. Last Sunday, she baked chocolate chip cookies and a lemon cake. After baking, she cleaned up the kitchen.", question: "After baking, Emma cleaned up the kitchen.", options: ["True", "False"], correctIndex: 0 },
-    
-
+    { difficulty: "medium", type: "paragraph", passage: "Priya caught the 8:05 train from Riverdale Station to Central, meeting Amir at 8:30 near Gate B.", question: "Where did Priya meet Amir?", options: ["Gate A", "Gate B", "Platform 2", "Ticket desk"], correctIndex: 1 },
+    { difficulty: "easy", type: "paragraph", passage: "On Monday at 7:30 PM, Maya and Leo met at Oak Park to practice badminton.", question: "What time did they meet?", options: ["6:30 PM", "7:30 PM", "8:30 PM", "7:00 PM"], correctIndex: 1 },
+    { difficulty: "easy", type: "paragraph", passage: "Carlos placed the red notebook on the second shelf beside the green vase before leaving for class.", question: "What color was the notebook?", options: ["Blue", "Green", "Red", "Black"], correctIndex: 2 },
+    { difficulty: "easy", type: "paragraph", passage: "Liam has a garden behind his house. He waters flowers every morning. Last Saturday, he planted tomatoes and carrots. After gardening, he drinks tea on his porch.", question: "Last Saturday, Liam planted tomatoes and carrots.", options: ["True", "False"], correctIndex: 0 }
 ];
 
   // Game configuration
@@ -210,6 +203,24 @@
     // Stop the game timer
     stopTimer();
     state.isActive = false;
+    
+    // Clear all pending timeouts and intervals
+    if (state.imageHideTimeoutId) {
+      clearTimeout(state.imageHideTimeoutId);
+      state.imageHideTimeoutId = null;
+    }
+    if (state.paragraphHideTimeoutId) {
+      clearTimeout(state.paragraphHideTimeoutId);
+      state.paragraphHideTimeoutId = null;
+    }
+    if (state.imageCountdownInterval) {
+      clearInterval(state.imageCountdownInterval);
+      state.imageCountdownInterval = null;
+    }
+    if (state.paragraphCountdownInterval) {
+      clearInterval(state.paragraphCountdownInterval);
+      state.paragraphCountdownInterval = null;
+    }
     
     // Save high score
     saveHighScore(state.score);
@@ -526,6 +537,12 @@
     elements.nextButton.disabled = true;
     elements.restartButton.hidden = false;
     saveHighScore(state.score);
+    
+    // Clear any existing coach messages
+    if (elements.coachPanel) {
+      elements.coachPanel.textContent = "";
+    }
+    
     renderHud();
     elements.feedback.textContent = `Time's up! Final score: ${state.score}`;
     elements.feedback.className = "feedback ok";
