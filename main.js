@@ -1,15 +1,15 @@
 // Game constants
 const COLORS = {
     GREEN: '#21BEBA',    // Caspar Clinic turquoise
-    BLUE: '#6C5CE7',     // Violet Clinic
-    ORANGE: '#FF7A00',   // Orange Clinic
+    CORAL: '#FF6B6B',     // Coral Clinic
+    YELLOW: '#FFD93D',   // Yellow Clinic
     WALL: '#e2e8f0',     // Light gray walls
     CORRIDOR: '#f8fafc', // Very light gray corridor
     SWITCH: '#21BEBA',   // Turquoise switches
     SPAWN: '#94a3b8'     // Cardboard box color
 };
 
-const CELL_SIZE = 40;
+const CELL_SIZE = 56;
 const DIRECTIONS = {
     NORTH: { x: 0, y: -1, name: 'north' },
     EAST: { x: 1, y: 0, name: 'east' },
@@ -17,44 +17,58 @@ const DIRECTIONS = {
     WEST: { x: -1, y: 0, name: 'west' }
 };
 
+const ASSETS = {
+    'clinic_caspar': 'assets/clinic_caspar.png',
+    'clinic_coral': 'assets/clinic_coral.png',
+    'clinic_yellow': 'assets/clinic_yellow.png',
+    'equipment_ball': 'assets/equipment_ball.png',
+    'equipment_dumbbell': 'assets/equipment_dumbbell.png',
+    'equipment_folder': 'assets/equipment_folder.png',
+};
+
 // Level definitions
 const LEVELS = {
     1: {
-        attempts: 10,
-        spawnInterval: 3000,
-        moveSpeed: 400,
+        // Tutorial / Practice level
+        attempts: 3,
+        spawnInterval: 4200,
+        moveSpeed: 560,
+        isTutorial: true,
+        maxConcurrentCarts: 1,
         map: [
             "############",
             "#S--+--G  ##",
-            "#   |  |  ##",
-            "#   |  |  ##",
-            "#   +--B  ##",
-            "#          #",
-            "#          #",
+            "#   |     ##",
+            "#   |     ##",
+            "#   B     ##",
+            "#         ##",
+            "#         ##",
             "############"
         ],
         colors: ['G', 'B']
     },
     2: {
-        attempts: 10,
-        spawnInterval: 2800,
-        moveSpeed: 380,
+        attempts: 7,
+        spawnInterval: 4200,
+        moveSpeed: 530,
+        maxConcurrentCarts: 2,
         map: [
             "############",
             "#S--+--G  ##",
             "#   |  |  ##",
+            "#   |  |  ##",
             "#   +--+  ##",
-            "#   |  B  ##",
-            "#   |     ##",
+            "#   +--B  ##",
+            "#         ##",
             "#         ##",
             "############"
         ],
         colors: ['G', 'B']
     },
     3: {
-        attempts: 10,
-        spawnInterval: 3200,
-        moveSpeed: 450,
+        attempts: 8,
+        spawnInterval: 3900,
+        moveSpeed: 490,
         map: [
             "##############",
             "#S--+----+G ##",
@@ -70,8 +84,8 @@ const LEVELS = {
     },
     4: {
         attempts: 10,
-        spawnInterval: 2400,
-        moveSpeed: 340,
+        spawnInterval: 3200,
+        moveSpeed: 320,
         map: [
             "##############",
             "#S---+---G  ##",
@@ -87,8 +101,8 @@ const LEVELS = {
     },
     5: {
         attempts: 10,
-        spawnInterval: 2200,
-        moveSpeed: 320,
+        spawnInterval: 1500,
+        moveSpeed: 300,
         map: [
             "##############",
             "#S--+---G   ##",
@@ -130,12 +144,41 @@ class Game {
         this.selectedSwitchIndex = 0;
         
         this.audioContext = null;
-        this.initAudio();
-        this.setupEventListeners();
-        this.initLevel();
-        this.gameLoop();
+        // Tutorial state
+        this.tutorialActive = false;
+        this.tutorialStep = 0;
+        this.ttsPlayed = false;
+        this.assets = {}; // To store loaded images
+        this.assetsLoaded = false;
+        
+        this.loadAssets().then(() => {
+            this.assetsLoaded = true;
+            this.initAudio();
+            this.setupEventListeners();
+            this.initLevel();
+            this.gameLoop();
+        });
     }
     
+    async loadAssets() {
+        const promises = Object.entries(ASSETS).map(([key, src]) => {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.src = src;
+                img.onload = () => {
+                    this.assets[key] = img;
+                    resolve();
+                };
+                img.onerror = () => {
+                    console.error(`Failed to load asset: ${src}`);
+                    // Resolve anyway so the game doesn't break if an image is missing
+                    resolve(); 
+                };
+            });
+        });
+        await Promise.all(promises);
+    }
+
     initAudio() {
         try {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -249,6 +292,21 @@ class Game {
         this.updateUI();
         this.resizeCanvas();
         
+        // Tutorial setup for level 1 (always show)
+        if (level.isTutorial) {
+            this.tutorialActive = true;
+            this.tutorialStep = 0;
+            this.ttsPlayed = false;
+            const overlay = document.getElementById('tutorial-overlay');
+            const text = document.getElementById('tutorial-text');
+            const skip = document.getElementById('tutorial-skip');
+            if (overlay && text) {
+                overlay.style.display = 'block';
+                text.textContent = 'Rotate the highlighted switch to change the route.';
+            }
+            if (skip) skip.onclick = () => { this.endTutorial(); };
+        }
+        
         // Hide hint after level 1
         const hint = document.getElementById('hint');
         if (this.currentLevel > 1) {
@@ -256,6 +314,26 @@ class Game {
         } else {
             hint.style.display = 'block';
         }
+
+        // Speak hint aloud on Level 1 (one time per session)
+        if (this.currentLevel === 1 && !this.ttsPlayed) {
+            const textToRead = (hint && hint.textContent) ? hint.textContent : 'Click switches to change their direction and route training equipment to matching reha clinics.';
+            this.speak(textToRead);
+            this.ttsPlayed = true;
+        }
+    }
+
+    speak(text) {
+        try {
+            if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.95;
+                utterance.pitch = 1.0;
+                utterance.volume = 1.0;
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(utterance);
+            }
+        } catch {}
     }
     
     handleClick(e) {
@@ -274,6 +352,11 @@ class Game {
             this.selectedSwitchIndex = switchIndex;
             this.cycleSwitchDirection(this.switches[switchIndex]);
             this.playSound(600, 150);
+            if (this.tutorialActive && this.tutorialStep === 0) {
+                const text = document.getElementById('tutorial-text');
+                if (text) text.textContent = 'Deliver the green ball to the green clinic.';
+                this.tutorialStep = 1;
+            }
         }
     }
     
@@ -359,9 +442,11 @@ class Game {
         const speedBoost = Math.floor(this.totalScore / 3) * 30;
         const spawnBoost = Math.floor(this.totalScore / 3) * 100;
         
+        const minMoveFactor = (this.currentLevel <= 2) ? 0.9 : 0.6;
+        const minSpawnFactor = (this.currentLevel <= 2) ? 0.9 : 0.7;
         return {
-            moveSpeed: Math.max(baseSpeed - speedBoost, baseSpeed * 0.6), // Don't go below 60% of base speed
-            spawnInterval: Math.max(baseSpawn - spawnBoost, baseSpawn * 0.7) // Don't go below 70% of base spawn time
+            moveSpeed: Math.max(baseSpeed - speedBoost, baseSpeed * minMoveFactor),
+            spawnInterval: Math.max(baseSpawn - spawnBoost, baseSpawn * minSpawnFactor)
         };
     }
     
@@ -377,12 +462,17 @@ class Game {
         const existingCart = this.carts.find(c => c.x === this.spawn.x && c.y === this.spawn.y);
         if (existingCart) return; // Don't spawn if blocked
         
+        let itemType = 'ball';
+        if (color === 'B') itemType = 'dumbbell';
+        if (color === 'O') itemType = 'folder';
+
         this.carts.push({
             x: this.spawn.x,
             y: this.spawn.y,
             targetX: this.spawn.x,
             targetY: this.spawn.y,
             color: color,
+            itemType: itemType, // Add itemType to cart object
             direction: DIRECTIONS.EAST, // Default spawn direction
             moving: false,
             moveProgress: 0
@@ -400,10 +490,26 @@ class Game {
         const currentCell = this.grid[cart.y][cart.x];
         
         if (currentCell === '+') {
-            // Switch - use switch direction
+            // Switch - use switch direction but enforce forward-only (no 180° reverse)
             const switchObj = this.switches.find(s => s.x === cart.x && s.y === cart.y);
             if (switchObj) {
-                nextDirection = switchObj.direction;
+                let desired = switchObj.direction;
+                const isOpposite = (a, b) => a && b && a.x === -b.x && a.y === -b.y;
+                // Gather valid directions from this tile
+                const allDirs = [DIRECTIONS.NORTH, DIRECTIONS.EAST, DIRECTIONS.SOUTH, DIRECTIONS.WEST];
+                const validDirs = allDirs.filter(d => this.isValidPath(cart.x + d.x, cart.y + d.y));
+                const nonOpposite = validDirs.filter(d => !isOpposite(d, cart.direction));
+                // If desired reverses, choose a non-opposite alternative
+                if (isOpposite(desired, cart.direction) || !this.isValidPath(cart.x + desired.x, cart.y + desired.y)) {
+                    // Prefer going straight if possible
+                    const straight = nonOpposite.find(d => d.x === cart.direction.x && d.y === cart.direction.y);
+                    if (straight) {
+                        desired = straight;
+                    } else if (nonOpposite.length > 0) {
+                        desired = nonOpposite[0];
+                    }
+                }
+                nextDirection = desired;
             }
         }
         
@@ -419,16 +525,13 @@ class Game {
         }
         
         // Check for collision with other carts at target position
-        const collision = this.carts.find(c => c !== cart && 
-            ((c.x === nextX && c.y === nextY) || 
+        const collision = this.carts.find(c => c !== cart &&
+            ((c.x === nextX && c.y === nextY) ||
              (c.targetX === nextX && c.targetY === nextY)));
-        
+
         if (collision) {
-            // Collision - both carts are removed
-            this.removeCart(cart);
-            this.removeCart(collision);
-            this.loseHeart();
-            this.playSound(150, 300, 'sawtooth');
+            // Forward-only: if the next tile is (or will be) occupied, wait this tick.
+            // No collision, no heart loss.
             return;
         }
         
@@ -469,11 +572,18 @@ class Game {
                 this.levelScore++;
                 this.playSound(800, 200);
                 this.removeCart(cart);
+                if (this.tutorialActive && this.tutorialStep >= 1) {
+                    // After first successful delivery, end tutorial softly
+                    this.endTutorial();
+                }
             } else {
                 // Wrong delivery
                 this.playSound(200, 400, 'sawtooth');
                 this.removeCart(cart);
-                this.loseHeart();
+                // Visual feedback: flash clinic red briefly
+                this.flashClinic(cart.x, cart.y);
+                const level = LEVELS[this.currentLevel];
+                if (!level.isTutorial) this.loseHeart();
             }
             
             // Check if level complete (10 attempts)
@@ -491,6 +601,13 @@ class Game {
         if (index > -1) {
             this.carts.splice(index, 1);
         }
+    }
+
+    endTutorial() {
+        const overlay = document.getElementById('tutorial-overlay');
+        if (overlay) overlay.style.display = 'none';
+        this.tutorialActive = false;
+        try { localStorage.setItem('rr_seen_tutorial','1'); } catch {}
     }
     
     loseHeart() {
@@ -619,6 +736,20 @@ class Game {
         
         // Draw switches with arrows
         this.switches.forEach((switchObj, index) => this.drawSwitch(switchObj, index === this.selectedSwitchIndex));
+        
+        // Apply transient effects (clinic flashes)
+        if (this._fx && this._fx.clinicFlash && Date.now() < this._fx.clinicFlash.until) {
+            const fx = this._fx.clinicFlash;
+            const px = fx.x * CELL_SIZE;
+            const py = fx.y * CELL_SIZE;
+            this.ctx.fillStyle = 'rgba(255,0,0,0.25)';
+            this.ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
+        }
+    }
+
+    flashClinic(x, y) {
+        if (!this._fx) this._fx = {};
+        this._fx.clinicFlash = { x, y, until: Date.now() + 500 };
     }
     
     drawGrid() {
@@ -641,9 +772,9 @@ class Game {
                     this.drawClinic(px, py, cell);
                 }
                 
-                // Draw cardboard box
+                // Draw spawn pad
                 if (cell === 'S') {
-                    this.drawCardboardBox(px, py);
+                    this.drawSpawnPad(px, py);
                 }
             }
         }
@@ -652,9 +783,9 @@ class Game {
     getCellColor(cell) {
         switch (cell) {
             case '#': return COLORS.WALL;
-            case 'G': return '#f0fffe';  // Light turquoise background
-            case 'B': return '#f8f7ff';  // Light violet background  
-            case 'O': return '#fff8f0';  // Light orange background
+            case 'G': // Make clinic background same as path
+            case 'B': // Make clinic background same as path
+            case 'O': // Make clinic background same as path
             case 'S': return '#f1f5f9';  // Light blue-gray for spawn
             case '+': return '#e0f7f7';  // Very light turquoise for switch
             case '-':
@@ -663,152 +794,109 @@ class Game {
             default: return '#fafafa';
         }
     }
+
+    // Utility to draw rounded rects
+    #roundRect(x, y, w, h, r, fill, stroke) {
+        const ctx = this.ctx;
+        if (r < 2) { if (fill) { ctx.fillRect(x, y, w, h); } if (stroke) { ctx.strokeRect(x, y, w, h); } return; }
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+        if (fill) ctx.fill();
+        if (stroke) ctx.stroke();
+    }
     
     drawClinic(x, y, type) {
-        const centerX = x + CELL_SIZE / 2;
-        const centerY = y + CELL_SIZE / 2;
-        const buildingSize = CELL_SIZE * 0.8;
-        const buildingX = centerX - buildingSize / 2;
-        const buildingY = centerY - buildingSize / 2;
-        
-        // Clinic colors
-        let clinicColor, clinicName;
-        switch (type) {
-            case 'G':
-                clinicColor = COLORS.GREEN;
-                clinicName = 'Caspar';
-                break;
-            case 'B':
-                clinicColor = COLORS.BLUE;
-                clinicName = 'Violet';
-                break;
-            case 'O':
-                clinicColor = COLORS.ORANGE;
-                clinicName = 'Orange';
-                break;
-        }
-        
-        // Building base
-        this.ctx.fillStyle = 'white';
-        this.ctx.fillRect(buildingX, buildingY, buildingSize, buildingSize);
-        
-        // Building outline
-        this.ctx.strokeStyle = clinicColor;
-        this.ctx.lineWidth = 3;
-        this.ctx.strokeRect(buildingX, buildingY, buildingSize, buildingSize);
-        
-        // Roof/top section
-        const roofHeight = buildingSize * 0.25;
-        this.ctx.fillStyle = clinicColor;
-        this.ctx.fillRect(buildingX, buildingY, buildingSize, roofHeight);
-        
-        // Door
-        const doorWidth = buildingSize * 0.2;
-        const doorHeight = buildingSize * 0.4;
-        const doorX = centerX - doorWidth / 2;
-        const doorY = buildingY + buildingSize - doorHeight;
-        this.ctx.fillStyle = clinicColor;
-        this.ctx.fillRect(doorX, doorY, doorWidth, doorHeight);
-        
-        // Windows
-        const windowSize = buildingSize * 0.15;
-        const windowY = buildingY + roofHeight + 8;
-        this.ctx.fillStyle = clinicColor;
-        this.ctx.fillRect(buildingX + 6, windowY, windowSize, windowSize);
-        this.ctx.fillRect(buildingX + buildingSize - windowSize - 6, windowY, windowSize, windowSize);
-        
-        // Only show name for Caspar clinic
-        if (type === 'G') {
-            this.ctx.fillStyle = 'white';
-            this.ctx.font = 'bold 8px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.fillText(clinicName, centerX, buildingY + roofHeight/2 + 2);
+        const cx = x + CELL_SIZE / 2;
+        const cy = y + CELL_SIZE / 2;
+        const s = CELL_SIZE * 1; // Fill the cell completely
+        const bx = cx - s / 2;
+        const by = cy - s / 2;
+
+        let assetKey;
+        if (type === 'G') assetKey = 'clinic_caspar';
+        else if (type === 'B') assetKey = 'clinic_coral';
+        else if (type === 'O') assetKey = 'clinic_yellow';
+
+        const img = this.assets[assetKey];
+        if (img) {
+            // Add a manual offset to correct for transparent padding in the asset
+            const offsetX = s * 0.1; 
+            const offsetY = s * 0.1;
+            this.ctx.drawImage(img, bx - offsetX, by - offsetY, s, s);
+        } else {
+            // Fallback drawing if image fails to load
+            this.ctx.fillStyle = '#cccccc';
+            this.ctx.fillRect(bx, by, s, s);
+            this.ctx.fillStyle = '#000000';
+            this.ctx.fillText('?', cx, cy);
         }
     }
     
-    drawCardboardBox(x, y) {
-        const centerX = x + CELL_SIZE / 2;
-        const centerY = y + CELL_SIZE / 2;
-        const boxSize = CELL_SIZE * 0.7;
-        const boxX = centerX - boxSize / 2;
-        const boxY = centerY - boxSize / 2;
-        
-        // Box base
-        this.ctx.fillStyle = '#d4a574';  // Cardboard brown
-        this.ctx.fillRect(boxX, boxY, boxSize, boxSize);
-        
-        // Box outline
-        this.ctx.strokeStyle = '#8b5a2b';
+    drawSpawnPad(x, y) {
+        const cx = x + CELL_SIZE / 2;
+        const cy = y + CELL_SIZE / 2;
+        const r = CELL_SIZE * 0.32;
+        // Pad base
+        this.ctx.fillStyle = '#e6f7f6';
+        this.ctx.strokeStyle = '#21BEBA';
         this.ctx.lineWidth = 2;
-        this.ctx.strokeRect(boxX, boxY, boxSize, boxSize);
-        
-        // Box tape/stripes
-        this.ctx.strokeStyle = '#a67c52';
-        this.ctx.lineWidth = 2;
-        // Horizontal stripe
         this.ctx.beginPath();
-        this.ctx.moveTo(boxX, centerY);
-        this.ctx.lineTo(boxX + boxSize, centerY);
+        this.ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        this.ctx.fill();
         this.ctx.stroke();
-        
-        // Vertical stripe  
-        this.ctx.beginPath();
-        this.ctx.moveTo(centerX, boxY);
-        this.ctx.lineTo(centerX, boxY + boxSize);
-        this.ctx.stroke();
-        
-        // "Equipment" text
-        this.ctx.fillStyle = '#5a3e2b';
-        this.ctx.font = 'bold 7px Arial';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText('EQUIP', centerX, centerY - 3);
-        this.ctx.fillText('MENT', centerX, centerY + 5);
+        // Chevrons
+        this.ctx.strokeStyle = '#21BEBA';
+        this.ctx.lineWidth = 3;
+        const chevron = (ox, oy) => {
+            this.ctx.beginPath();
+            this.ctx.moveTo(ox - r*0.05, oy - r*0.18);
+            this.ctx.lineTo(ox + r*0.15, oy);
+            this.ctx.lineTo(ox - r*0.05, oy + r*0.18);
+            this.ctx.stroke();
+        };
+        // Position chevrons to point right
+        chevron(cx - r*0.2, cy);
+        chevron(cx + r*0.2, cy);
     }
     
     drawCart(cart) {
-        const level = LEVELS[this.currentLevel];
         let drawX = cart.x * CELL_SIZE;
         let drawY = cart.y * CELL_SIZE;
-        
-        // Animate movement
         if (cart.moving) {
-            const progress = Math.min(cart.moveProgress, 1);
-            drawX += (cart.targetX - cart.x) * CELL_SIZE * progress;
-            drawY += (cart.targetY - cart.y) * CELL_SIZE * progress;
+            const p = Math.min(cart.moveProgress, 1);
+            drawX += (cart.targetX - cart.x) * CELL_SIZE * p;
+            drawY += (cart.targetY - cart.y) * CELL_SIZE * p;
         }
-        
-        // Draw gymnastic ball (sphere)
-        const centerX = drawX + CELL_SIZE / 2;
-        const centerY = drawY + CELL_SIZE / 2;
-        const radius = CELL_SIZE * 0.3;
-        
-        const color = cart.color === 'G' ? COLORS.GREEN : 
-                      cart.color === 'B' ? COLORS.BLUE : COLORS.ORANGE;
-        
-        // Ball shadow
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-        this.ctx.beginPath();
-        this.ctx.ellipse(centerX + 2, centerY + 2, radius, radius * 0.3, 0, 0, 2 * Math.PI);
-        this.ctx.fill();
-        
-        // Ball main body
-        this.ctx.fillStyle = color;
-        this.ctx.beginPath();
-        this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-        this.ctx.fill();
-        
-        // Ball highlight
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-        this.ctx.beginPath();
-        this.ctx.arc(centerX - radius * 0.3, centerY - radius * 0.3, radius * 0.3, 0, 2 * Math.PI);
-        this.ctx.fill();
-        
-        // Ball outline
-        this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
-        this.ctx.lineWidth = 1;
-        this.ctx.beginPath();
-        this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-        this.ctx.stroke();
+        const cx = drawX + CELL_SIZE / 2;
+        const cy = drawY + CELL_SIZE / 2;
+        const s = CELL_SIZE * 0.95; // Make cart nearly full cell size
+        const bx = cx - s / 2;
+        const by = cy - s / 2;
+
+        let assetKey;
+        if (cart.itemType === 'ball') assetKey = 'equipment_ball';
+        else if (cart.itemType === 'dumbbell') assetKey = 'equipment_dumbbell';
+        else assetKey = 'equipment_folder';
+
+        const img = this.assets[assetKey];
+        if (img) {
+            this.ctx.drawImage(img, bx, by, s, s);
+        } else {
+            // Fallback drawing if image fails to load
+            this.ctx.fillStyle = '#cccccc';
+            this.ctx.fillRect(bx, by, s, s);
+            this.ctx.fillStyle = '#000000';
+            this.ctx.fillText('?', cx, cy);
+        }
     }
     
     drawSwitch(switchObj, isSelected = false) {
@@ -873,5 +961,64 @@ class Game {
 
 // Start the game when page loads
 window.addEventListener('load', () => {
-    new Game();
+    // Simple navigation for mock overlays
+    const landing = document.getElementById('landing-overlay');
+    const library = document.getElementById('library-overlay');
+    const openLibrary = document.getElementById('menu-training');
+    const backToDashboard = document.getElementById('back-to-dashboard');
+    const playAttention = document.getElementById('play-attention');
+    const playReadingGame = document.getElementById('play-reading-game');
+    const ctaTrainBrain = document.getElementById('cta-train-brain');
+    const menuTrainBrain = document.getElementById('train-brain-menu');
+    const pillTrainBrain = document.getElementById('train-brain-pill');
+    const resetTutorialBtn = document.getElementById('reset-tutorial');
+
+    let gameInstance = null;
+
+    const startGame = () => {
+        if (!gameInstance) {
+            gameInstance = new Game();
+        }
+        if (library) library.style.display = 'none';
+        if (landing) landing.style.display = 'none';
+    };
+
+    // Check for URL params to show a specific view
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('view') === 'library') {
+        // Skip landing, go straight to library
+        landing.style.display = 'none';
+        library.style.display = 'flex';
+    }
+
+    // Flow: Landing (full image) -> Library -> Game
+    if (landing && library) {
+        const goLibrary = () => {
+            landing.style.display = 'none';
+            library.style.display = 'flex';
+        };
+        landing.addEventListener('click', goLibrary);
+        if (menuTrainBrain) menuTrainBrain.addEventListener('click', goLibrary);
+        if (pillTrainBrain) pillTrainBrain.addEventListener('click', goLibrary);
+        
+        if (resetTutorialBtn) resetTutorialBtn.addEventListener('click', () => {
+            try { localStorage.removeItem('rr_seen_tutorial'); } catch {}
+            alert('Tutorial will show again on Level 1.');
+        });
+
+        if (backToDashboard) backToDashboard.addEventListener('click', () => {
+            library.style.display = 'none';
+            landing.style.display = 'flex';
+        });
+
+        if (playAttention) playAttention.addEventListener('click', startGame);
+        
+        if (playReadingGame) {
+            playReadingGame.addEventListener('click', () => {
+                window.location.href = 'games/reha-rush/index.html';
+            });
+        }
+    } else {
+        startGame();
+    }
 });

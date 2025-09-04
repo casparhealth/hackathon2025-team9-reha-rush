@@ -5,8 +5,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reha Rush - Hospital Cart Routing Game</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png" sizes="any">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <meta name="theme-color" content="#21BEBA">
 </head>
 <body>
+        <!-- Landing overlay with full-screen background image (uses dashboard.png) -->
+    <div id="landing-overlay" class="overlay landing" style="display: flex;">
+        <!-- Left sidebar mock over the background -->
+        <aside class="landing-nav">
+            <div class="landing-logo">CASPAR</div>
+            <nav class="landing-menu">
+                <div class="nav-item active"><span class="dot">🎯</span><span>Therapy</span></div>
+                <div class="nav-item"><span class="dot">💬</span><span>Messenger</span></div>
+                <div class="nav-item"><span class="dot">👤</span><span>Profile</span></div>
+                <div class="nav-divider"></div>
+                <button id="train-brain-menu" class="nav-item cta"><span class="dot">🧠</span><span>Train your Brain</span></button>
+            </nav>
+            <div class="landing-spacer"></div>
+            <div class="landing-logout">Log out</div>
+        </aside>
+    </div>
+
+    <!-- Game library overlay -->
+    <div id="library-overlay" class="overlay" style="display: none;">
+        <div class="overlay-content">
+            <div class="overlay-header">
+                <h2>Game library</h2>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button id="back-to-dashboard" class="secondary">Back</button>
+                </div>
+            </div>
+            <div class="cards">
+                <div class="card">
+                    <h3>Train your attention</h3>
+                    <p class="subtitle">RehaRush</p>
+                    <button id="play-attention" class="primary">Play</button>
+                </div>
+                <div class="card">
+                    <h3>Train your memory</h3>
+                    <p class="subtitle">Neuro-Cognitive Reading Game</p>
+                    <button id="play-reading-game" class="primary">Play</button>
+                </div>
+            </div>
+            <p class="overlay-note" style="margin-top:12px;">Coming soon 🔒: Train Your Executive Functions, Train Your Visuospatial Skills, Train Your Language Skills</p>
+        </div>
+    </div>
+
+    <!-- Tutorial overlay (lightweight captions + skip) -->
+    <div id="tutorial-overlay" class="tutorial-overlay" style="display: none;">
+        <div class="tutorial-box">
+            <div id="tutorial-text">Welcome!</div>
+            <div class="tutorial-actions">
+                <button id="tutorial-skip" class="secondary">Skip tutorial</button>
+            </div>
+        </div>
+    </div>
+
     <div class="game-container">
         <div class="hud">
             <div class="game-info">
@@ -17,12 +72,13 @@
             <div class="controls">
                 <button id="pause-btn">Pause</button>
                 <button id="restart-btn">Restart</button>
+                <button id="reset-tutorial" class="secondary">Reset tutorial</button>
                 <button id="next-level-btn" style="display: none;">Next Level</button>
-                <button id="reading-game-btn" onclick="window.location.href='games/reha-rush/'">Reading Game</button>
+                <button id="reading-game-btn" onclick="window.location.href='index.html?view=library'">Back</button>
             </div>
         </div>
         
-        <div class="hint" id="hint">Click switches to change their direction and route gymnastic balls to matching reha clinics.</div>
+        <div class="hint" id="hint">Click switches to change their direction and route training equipment to matching reha clinics.</div>
         
         <div class="canvas-container">
             <canvas id="gameCanvas" width="800" height="600"></canvas>
