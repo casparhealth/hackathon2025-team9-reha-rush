@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Neuro-Cognitive Reading Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <main class="container" id="app">
+      <header class="header" role="banner">
+        <a href="/" class="btn ghost" style="margin-right:12px">← Back to Reha Rush</a>
+        <h1 class="title">Neuro-Cognitive Reading Game</h1>
+        <p class="subtitle">Read, comprehend, and answer quickly to train focus and recall.</p>
+      </header>
+
+      <section class="hud" aria-label="Game status">
+        <div class="hud-item" aria-live="polite">
+          <span class="hud-label">Score</span>
+          <strong id="score" class="hud-value">0</strong>
+        </div>
+        <div class="hud-item" aria-live="polite">
+          <span class="hud-label">Timer</span>
+          <strong id="timer" class="hud-value">01:30</strong>
+        </div>
+        <div class="hud-item" aria-live="polite">
+          <span class="hud-label">High</span>
+          <strong id="highScore" class="hud-value">0</strong>
+        </div>
+      </section>
+
+      <section id="intro" class="card" aria-label="Intro">
+        <h2>How it works</h2>
+        <ol class="instructions">
+          <li>Press Start to begin a timed session (90 seconds).</li>
+          <li>Read the passage, then select the correct answer.</li>
+          <li>Submit your choice. Use 1-4 keys to select, Enter to submit.</li>
+          <li>Press N or Next to move on. Aim for a high score!</li>
+        </ol>
+        <div class="intro-controls">
+          <label for="modeSelect">Mode</label>
+          <select id="modeSelect" class="select" aria-label="Select question mode">
+            <option value="all">All</option>
+            <option value="text">Text only</option>
+            <option value="image">Image only</option>
+            <option value="paragraph">Paragraph only</option>
+          </select>
+        </div>
+        <div class="intro-controls">
+          <label for="difficultySelect">Difficulty</label>
+          <select id="difficultySelect" class="select" aria-label="Select difficulty level">
+            <option value="all">All</option>
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+        <div class="intro-controls">
+          <label class="toggle" aria-label="Enable or disable voice assistant">
+            <input id="voiceToggle" type="checkbox" />
+            <span>Voice assistant (text-to-speech)</span>
+          </label>
+        </div>
+        <button id="startBtn" class="btn primary">Start</button>
+      </section>
+
+      <section id="questionArea" class="card" aria-label="Question" hidden>
+        <aside id="coachPanel" class="coach" aria-live="polite" hidden></aside>
+        <div id="paragraphCountdown" class="paragraph-countdown" hidden></div>
+        <div id="therapist" class="therapist" hidden>
+          <div id="therapistAvatar" class="avatar" aria-hidden="true">
+            <svg id="avatarSvg" viewBox="0 0 140 200" width="120" height="170" role="img" aria-label="Cartoon dog avatar">
+              <defs>
+                <clipPath id="dogHead"><circle cx="70" cy="70" r="54"/></clipPath>
+              </defs>
+              <!-- Enhanced Dark Yellow & White Theme -->
+              <circle cx="70" cy="70" r="58" fill="#fff5e6" stroke="#ffb347" stroke-width="2"/>
+              <polygon class="pet-ear ear-left" points="40,26 56,6 64,34" fill="#ffd700" stroke="#ffb347" stroke-width="2" opacity="0"/>
+              <polygon class="pet-ear ear-right" points="76,34 84,6 100,26" fill="#ffd700" stroke="#ffb347" stroke-width="2" opacity="0"/>
+              <g clip-path="url(#dogHead)">
+                <circle cx="70" cy="70" r="54" fill="#ffd700"/>
+                <ellipse cx="70" cy="92" rx="65" ry="28" fill="#fff5e6" opacity="0.8"/>
+              </g>
+              <circle cx="56" cy="66" r="5" fill="#2a2f4f"/>
+              <circle cx="84" cy="66" r="5" fill="#2a2f4f"/>
+              <path d="M46 56 q10 -6 20 0" stroke="#2a2f4f" stroke-width="3" fill="none"/>
+              <path d="M74 56 q10 -6 20 0" stroke="#2a2f4f" stroke-width="3" fill="none"/>
+              <ellipse cx="70" cy="86" rx="26" ry="16" fill="#fff" stroke="#ffb347" stroke-width="1"/>
+              <ellipse cx="70" cy="82" rx="8" ry="6" fill="#2a2f4f"/>
+              <path class="mouth mouth-idle show" d="M56 92 q14 6 28 0" stroke="#2a2f4f" stroke-width="3" fill="none"/>
+              <path class="mouth mouth-happy" d="M50 90 q20 16 40 0" stroke="#2a2f4f" stroke-width="4" fill="none" opacity="0"/>
+              <path class="mouth mouth-sad" d="M50 98 q20 -14 40 0" stroke="#2a2f4f" stroke-width="4" fill="none" opacity="0"/>
+              <path class="tongue" d="M66 96 q4 12 8 0 q-4 10 -8 0 z" fill="#ff8aa0" opacity="0"/>
+              <path class="pet-tail" d="M118 102 q18 10 0 26" stroke="#ffb347" stroke-width="4" fill="none" stroke-linecap="round" opacity="0"/>
+              <!-- Left hand -->
+              <ellipse class="pet-hand hand-left" cx="45" cy="110" rx="12" ry="8" fill="#ffd700" stroke="#ffb347" stroke-width="2" opacity="0"/>
+              <ellipse class="pet-hand hand-left" cx="45" cy="110" rx="8" ry="12" fill="#ffd700" stroke="#ffb347" stroke-width="2" opacity="0"/>
+              <!-- Right hand -->
+              <ellipse class="pet-hand hand-right" cx="95" cy="110" rx="12" ry="8" fill="#ffd700" stroke="#ffb347" stroke-width="2" opacity="0"/>
+              <ellipse class="pet-hand hand-right" cx="95" cy="110" rx="8" ry="12" fill="#ffd700" stroke="#ffb347" stroke-width="2" opacity="0"/>
+              
+              <!-- Full Dog Body -->
+              <!-- Body -->
+              <ellipse class="pet-body" cx="70" cy="140" rx="35" ry="25" fill="#ffd700" stroke="#ffb347" stroke-width="2" opacity="0"/>
+              <!-- Front legs -->
+              <rect class="pet-leg leg-front-left" x="55" y="140" width="8" height="25" rx="4" fill="#ffd700" stroke="#ffb347" stroke-width="1" opacity="0"/>
+              <rect class="pet-leg leg-front-right" x="77" y="140" width="8" height="25" rx="4" fill="#ffd700" stroke="#ffb347" stroke-width="1" opacity="0"/>
+              <!-- Back legs -->
+              <rect class="pet-leg leg-back-left" x="45" y="140" width="8" height="25" rx="4" fill="#ffd700" stroke="#ffb347" stroke-width="1" opacity="0"/>
+              <rect class="pet-leg leg-back-right" x="87" y="140" width="8" height="25" rx="4" fill="#ffd700" stroke="#ffb347" stroke-width="1" opacity="0"/>
+              <!-- Paws -->
+              <ellipse class="pet-paw paw-front-left" cx="59" cy="165" rx="6" ry="4" fill="#ffd700" stroke="#ffb347" stroke-width="1" opacity="0"/>
+              <ellipse class="pet-paw paw-front-right" cx="81" cy="165" rx="6" ry="4" fill="#ffd700" stroke="#ffb347" stroke-width="1" opacity="0"/>
+              <ellipse class="pet-paw paw-back-left" cx="49" cy="165" rx="6" ry="4" fill="#ffd700" stroke="#ffb347" stroke-width="1" opacity="0"/>
+              <ellipse class="pet-paw paw-back-right" cx="91" cy="165" rx="6" ry="4" fill="#ffd700" stroke="#ffb347" stroke-width="1" opacity="0"/>
+            </svg>
+            <div class="avatar-fx" aria-hidden="true"></div>
+          </div>
+          <div id="therapistActions" class="therapist-actions" hidden>
+            <button id="highFiveBtn" class="btn">High five ✋</button>
+            <button id="tipBtn" class="btn ghost">Tip</button>
+          </div>
+        </div>
+        <div id="mediaContainer" class="media" hidden>
+          <img id="mediaImg" alt="">
+          <div id="imageCountdown" class="image-countdown"></div>
+        </div>
+        <div class="passage-container">
+          <p id="passage" class="passage"></p>
+        </div>
+        <h2 id="questionText" class="question"></h2>
+        <form id="answers" class="answers" aria-labelledby="questionText"></form>
+        <div class="controls">
+          <button id="submitBtn" class="btn" disabled>Submit</button>
+          <button id="backBtn" class="btn" disabled>Back</button>
+          <button id="nextBtn" class="btn" disabled>Next</button>
+          <button id="restartBtn" class="btn ghost" hidden>Restart</button>
+        </div>
+        <div id="feedback" class="feedback" role="status" aria-live="polite"></div>
+        <div id="explanation" class="explanation" hidden></div>
+      </section>
+
+      <footer class="footer">
+        <small>Keyboard: 1-9 select/toggle • Enter submit • B back • N next • R restart</small>
+      </footer>
+    </main>
+  </body>
+  </html>
+
+
