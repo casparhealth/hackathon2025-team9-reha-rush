@@ -961,6 +961,7 @@ window.addEventListener('load', () => {
     const openLibrary = document.getElementById('menu-training');
     const backToDashboard = document.getElementById('back-to-dashboard');
     const playAttention = document.getElementById('play-attention');
+    const playNeuroVista = document.getElementById('play-neurovista');
     const playReadingGame = document.getElementById('play-reading-game');
     const ctaTrainBrain = document.getElementById('cta-train-brain');
     const menuTrainBrain = document.getElementById('train-brain-menu');
@@ -1010,6 +1011,12 @@ window.addEventListener('load', () => {
         });
 
         if (playAttention) playAttention.addEventListener('click', startGame);
+        
+        if (playNeuroVista) {
+            playNeuroVista.addEventListener('click', () => {
+                window.location.href = 'games/reha-rush/index.html';
+            });
+        }
         
         if (playReadingGame) {
             playReadingGame.addEventListener('click', () => {
