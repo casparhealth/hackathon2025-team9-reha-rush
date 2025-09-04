@@ -40,17 +40,21 @@ The development of Reha Rush was significantly accelerated through the use of La
 
 ### 2. Neuro-Cognitive Reading Game (Memory Game)
 
-*(This section to be completed by the other developer)*
+The Neuro-Cognitive Reading Game (Memory Game) is designed to strengthen working memory, attention, and reading comprehension
 
 #### Game Idea & Therapeutic Intent
 
-*   *(Please describe the game and its therapeutic goals here, referencing the cognitive domains below.)*
+Train short-term and working memory
+
+Support reading fluency and comprehension by embedding memory tasks within narrative or text-based contexts.
+
+Enhance attention control by challenging players to focus on key textual details and ignore distractions.
 
 #### Use of LLMs
 
-*   *(Please describe how LLMs were used in the development of this game.)*
+*   **Cursor with GPT-5 Integration:** Cursor's AI features were  used to implement new features
 
 #### Notable Blockers
 
-*   *(Please describe any technical or clinical challenges encountered.)*
+Clinical validation: Ensuring that LLM-generated text is both therapeutically effective and clinically appropriate required review by cognitive therapists. Some outputs were too complex, culturally biased, or lacked therapeutic alignment.
 
