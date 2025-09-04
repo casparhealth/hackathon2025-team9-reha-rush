@@ -38,9 +38,9 @@ The development of Reha Rush was significantly accelerated through the use of La
 
 ---
 
-### 2. Neuro-Cognitive Reading Game (Memory Game)
+### 2. NeuroVista (Memory Game)
 
-The Neuro-Cognitive Reading Game (Memory Game) is designed to strengthen working memory, attention, and reading comprehension
+The NeuroVista (Memory Game) is designed to strengthen working memory, attention, and reading comprehension
 
 #### Game Idea & Therapeutic Intent
 
