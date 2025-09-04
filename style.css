@@ -85,6 +85,7 @@ body {
     align-items: center;
     justify-content: space-between;
     margin-bottom: 16px;
+    color: #21BEBA; /* Make header text more visible */
 }
 
 .brand { font-weight: 900; letter-spacing: 1px; color: #21BEBA; }
@@ -95,7 +96,15 @@ body {
 
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
 .card { background: #0b1220; border: 1px solid #1f2937; border-radius: 10px; padding: 16px; }
-.card h3 { margin-bottom: 6px; }
+.card h3 { 
+    margin-bottom: 6px;
+    color: #FFFFFF; /* Make card titles pure white for visibility */
+}
+.card > p {
+    color: #fff;
+    margin-bottom: 16px;
+    font-size: 1.05em;
+}
 .card .subtitle { color: #9ca3af; margin-bottom: 12px; }
 .card.muted { opacity: 0.7; }
 .disabled { background: #334155; cursor: not-allowed; }
